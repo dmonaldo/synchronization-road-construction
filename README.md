@@ -1,5 +1,5 @@
 # synchronization-road-construction
-Models a common roadway occurrence, where a lane is closed and a flag person is directing traffic.
+Models a a common roadway occurrence, where a lane is closed and a flag person is directing traffic.
 
 ///////// Team member's name and contributions //////////////////////
 Team member #1: Dante Monaldo
