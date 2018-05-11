@@ -162,10 +162,14 @@ void *consume(void *args)
 {
   struct car drivingCar;
 
+  pthread_mutex_lock(&flagPersonMutex);
+
   while (sReadyQ.size() == 0 && nReadyQ.size() == 0) {
-    cout << "consumer waiting..." << endl;
+    cout << "consumer waiting... flag person sleeping" << endl;
     pthread_cond_wait(&flagPersonCondition, &flagPersonMutex);
   }
+
+  pthread_mutex_unlock(&flagPersonMutex);
 
   // drivingCar = sReadyQ.front();
   // sReadyQ.pop();
