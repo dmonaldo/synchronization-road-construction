@@ -82,6 +82,14 @@ void *produceNorth(void *args)
   pthread_mutex_unlock(&flagPersonMutex);
   sem_post(&carSem);
 
+  if (rand() % 10 < 8) {
+    if (-1 == pthread_create(&t_id, NULL, produceNorth, NULL))
+      return -1;
+    pthread_sleep(1);
+  } else {
+    pthread_sleep(20);
+  }
+
   return 0;
 }
 void *produceSouth(void *args)
@@ -103,6 +111,14 @@ void *produceSouth(void *args)
   pthread_cond_signal(&flagPersonCondition);
   pthread_mutex_unlock(&flagPersonMutex);
   sem_post(&carSem);
+
+  if (rand() % 10 < 8) {
+    if (-1 == pthread_create(&t_id, NULL, produceSouth, NULL))
+      return -1;
+    pthread_sleep(1);
+  } else {
+    pthread_sleep(20);
+  }
 
   return 0;
 }
