@@ -4,12 +4,32 @@
 #include <time.h>
 #include <queue>
 #include <semaphore.h>
+#include <iostream>
 
-//global variables to track time and be shared/usable within threads
+using namespace std;
+
+// Global variables to track time and be shared/usable within threads
 time_t rawTime;
 sem_t carSem;
+
+// Initialize mutex variables
+pthread_mutex_t flagPersonMutex;
+pthread_cond_t flagPersonCondition;
+
+// Keep track of number of cars that have been created
 int carCounter = 0;
-//queue<car> nReadyQ -- maybe need to decalre here?? same for sReadyQ
+
+struct car {
+  int id;
+  char direction;
+  struct timespec arrivalTime; // when they appear on the road
+//   startTime,
+//   endTime
+};
+
+queue<car> nReadyQ;
+queue<car> sReadyQ;
+
 /******************************************************************************
 pthread_sleep takes an integer number of seconds to pause the current thread We
 provide this function because one does not exist in the standard pthreads library. We
@@ -58,9 +78,17 @@ int main() {
   pthread_t t_id;
   int pshared = 0;
   int value = 1;
-  queue<car> nReadyQ;
-  queue<car> sReadyQ;
-  if(0 != sem_init(&carSem, pshared, value)) //value is 1 because this is a lock
+  // queue<car> nReadyQ;
+  // queue<car> sReadyQ;
+
+  if (pthread_mutex_init(&flagPersonMutex,NULL)) {
+    return -1;
+  }
+  if (pthread_cond_init(&flagPersonCondition,NULL)) {
+    return -1;
+  }
+
+  if(0 != sem_open("mySem", carSem, pshared, value)) //value is 1 because this is a lock
     perror("sem_init");
     return -1;
   if ( -1 == pthread_create(&t_id, NULL, worker, NULL) ) {
@@ -76,24 +104,21 @@ int main() {
     pthread_sleep(2);
   }
 
-  sem_destroy(&carSem);
+  sem_close(&carSem);
+  pthread_mutex_destroy(&flagPersonMutex);
+  pthread_cond_destroy(&flagPersonCondition);
 
   return 0;
 }
-
-struct car{
-  int id;
-  char direction;
-  struct timespec arrivalTime; // when they appear on the road
-//   startTime,
-//   endTime
-};
 
 void *produceNorth(void *args)
 {
   struct timespec arrival;
   struct car newCar;
+
   sem_wait(&carSem);
+  pthread_mutex_lock(&flagPersonMutex);
+
   carCounter++;
   newCar.id = carCounter;
   newCar.direction = 'N';
@@ -101,7 +126,12 @@ void *produceNorth(void *args)
   arrival.tv_nsec = 0;
   newCar.arrivalTime = arrival;
   nReadyQ.push(newCar);
+
+  pthread_cond_signal(&flagPersonCondition);
+  pthread_mutex_unlock(&flagPersonMutex);
   sem_post(&carSem);
+
+  return 0;
 }
 
 
@@ -109,7 +139,10 @@ void *produceSouth(void *args)
 {
   struct timespec arrival;
   struct car newCar;
+
   sem_wait(&carSem);
+  pthread_mutex_lock(&flagPersonMutex);
+
   carCounter++;
   newCar.id = carCounter;
   newCar.direction = 'S';
@@ -117,16 +150,24 @@ void *produceSouth(void *args)
   arrival.tv_nsec = 0;
   newCar.arrivalTime = arrival;
   sReadyQ.push(newCar);
+
+  pthread_cond_signal(&flagPersonCondition);
+  pthread_mutex_unlock(&flagPersonMutex);
   sem_post(&carSem);
+
+  return 0;
 }
 
 void *consume(void *args)
 {
   struct car drivingCar;
 
-  sem_wait(carSem);
-  drivingCar = sReadyQ.front();
-  sReadyQ.pop();
-  sem_post(carSem);
+  while (sReadyQ.size() == 0 && nReadyQ.size() == 0) {
+    cout << "consumer waiting..." << endl;
+    pthread_cond_wait(&flagPersonCondition, &flagPersonMutex);
+  }
 
+  // drivingCar = sReadyQ.front();
+  // sReadyQ.pop();
+  return 0;
 }
