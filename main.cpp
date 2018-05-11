@@ -9,7 +9,6 @@
 using namespace std;
 
 // Global variables to track time and be shared/usable within threads
-time_t rawTime;
 sem_t carSem;
 
 // Initialize mutex variables
@@ -23,7 +22,7 @@ struct car {
   int id;
   char direction;
   struct timespec arrivalTime; // when they appear on the road
-  struct timespec startTime;
+  struct timespec startTime,
   struct timespec endTime;
 };
 
@@ -162,14 +161,10 @@ void *consume(void *args)
 {
   struct car drivingCar;
 
-  pthread_mutex_lock(&flagPersonMutex);
-
   while (sReadyQ.size() == 0 && nReadyQ.size() == 0) {
-    cout << "consumer waiting... flag person sleeping" << endl;
+    cout << "consumer waiting..." << endl;
     pthread_cond_wait(&flagPersonCondition, &flagPersonMutex);
   }
-
-  pthread_mutex_unlock(&flagPersonMutex);
 
   // drivingCar = sReadyQ.front();
   // sReadyQ.pop();
