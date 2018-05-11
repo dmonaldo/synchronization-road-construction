@@ -2,7 +2,12 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
-
+#include <queue>
+//global variables to track time and be shared/usable within threads
+time_t rawTime;
+sem_t carSem;
+int carCounter = 0;
+//queue<car> nReadyQ -- maybe need to decalre here?? same for sReadyQ
 /******************************************************************************
 pthread_sleep takes an integer number of seconds to pause the current thread We
 provide this function because one does not exist in the standard pthreads library. We
@@ -50,6 +55,8 @@ void *worker(void *arg) {
 int main() {
   pthread_t t_id;
 
+  queue<car> nReadyQ;
+  
   if ( -1 == pthread_create(&t_id, NULL, worker, NULL) ) {
     perror("pthread_create");
     return -1;
@@ -63,10 +70,39 @@ int main() {
   return 0;
 }
 
-// car = {
-//   id,
-//   direction,
-//   arrivalTime, // when they appear on the
+struct car{
+  int id;
+  char direction;
+  struct timespec arrivalTime; // when they appear on the road
 //   startTime,
 //   endTime
-// }
+};
+
+void *produceNorth(void *args)
+{
+  struct timespec arrival;
+  struct car newCar;
+  carCounter++;
+  newCar.id = carCounter;
+  newCar.direction = 'N';
+  arrival.tv_sec = (unsigned int)time(NULL);
+  arrival.tv_nsec = 0;
+  newCar.arrivalTime = arrival;
+  nReadyQ.push(newCar);
+}
+
+
+
+
+void *produceSouth(void *args)
+{
+  struct timespec arrival;
+  struct car newCar;
+  carCounter++;
+  newCar.id = carCounter; 
+  newCar.direction = 'S';
+  arrival.tv_sec = (unsigned int)time(NULL);
+  arrival.tv_nsec = 0;
+  newCar.arrivalTime = arrival;
+  sReadyQ.push(newCar);
+}
