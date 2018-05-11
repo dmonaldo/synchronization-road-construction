@@ -134,14 +134,18 @@ int main() {
   if (pthread_cond_init(&flagPersonCondition, NULL)) {
     return -1;
   }
-  if(-1 == pthread_create(&t_id, NULL, produceSouth, NULL))
-    return -1;
 
   if (0 != sem_init(&carSem, pshared, value)) {
     //value is 1 because this is a lock
     perror("sem_init");
     return -1;
   }
+
+  if (-1 == pthread_create(&t_id, NULL, produceNorth, NULL))
+    return -1;
+
+  if (-1 == pthread_create(&t_id, NULL, produceSouth, NULL))
+    return -1;
 
   while (1) {
     printf("Main Running\n");
