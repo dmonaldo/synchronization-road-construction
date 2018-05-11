@@ -66,68 +66,74 @@ void *produceNorth(void *args)
 {
   struct timespec arrival;
   struct car newCar;
-  cout<<"in north" << endl;
-  sem_wait(&carSem);
-  pthread_mutex_lock(&flagPersonMutex);
+  cout <<"in north" << endl;
+  bool nextCar = true;
+  while(nextCar){
+    cout << "in north while" << endl;
+    sem_wait(&carSem);
+    pthread_mutex_lock(&flagPersonMutex);
+    cout << "in north locks" << endl;
+    carCounter++;
+    newCar.id = carCounter;
+    newCar.direction = 'N';
+    arrival.tv_sec = (unsigned int)time(NULL);
+    arrival.tv_nsec = 0;
+    newCar.arrivalTime = arrival;
+    nReadyQ.push(newCar);
 
-  carCounter++;
-  newCar.id = carCounter;
-  newCar.direction = 'N';
-  arrival.tv_sec = (unsigned int)time(NULL);
-  arrival.tv_nsec = 0;
-  newCar.arrivalTime = arrival;
-  nReadyQ.push(newCar);
-
-  pthread_cond_signal(&flagPersonCondition);
-  pthread_mutex_unlock(&flagPersonMutex);
-  sem_post(&carSem);
-
-  if (rand() % 10 < 8) {
-    if (-1 == pthread_create(&t_id, NULL, produceNorth, NULL))
-      return -1;
-    pthread_sleep(1);
-  } else {
-    pthread_sleep(20);
+    pthread_cond_signal(&flagPersonCondition);
+    pthread_mutex_unlock(&flagPersonMutex);
+    sem_post(&carSem);
   }
-
-  return 0;
+    if (rand()%11 < 8) {
+      nextCar = true;
+      pthread_sleep(1);
+    } else {
+      nextCar = false;
+      pthread_sleep(20);
+    }
+  
+  //  return 0;
 }
 void *produceSouth(void *args)
 {
   struct timespec arrival;
   struct car newCar;
-
-  sem_wait(&carSem);
-  pthread_mutex_lock(&flagPersonMutex);
+  bool nextCar = true;
   cout << "in south " << endl;
-  carCounter++;
-  newCar.id = carCounter;
-  newCar.direction = 'S';
-  arrival.tv_sec = (unsigned int)time(NULL);
-  arrival.tv_nsec = 0;
-  newCar.arrivalTime = arrival;
-  sReadyQ.push(newCar);
+  while(nextCar){
+    cout << "in south while " << endl;
+    sem_wait(&carSem);
+    pthread_mutex_lock(&flagPersonMutex);
+    cout << "in south locks" << endl;
+    carCounter++;
+    newCar.id = carCounter;
+    newCar.direction = 'S';
+    arrival.tv_sec = (unsigned int)time(NULL);
+    arrival.tv_nsec = 0;
+    newCar.arrivalTime = arrival;
+    sReadyQ.push(newCar);
 
-  pthread_cond_signal(&flagPersonCondition);
-  pthread_mutex_unlock(&flagPersonMutex);
-  sem_post(&carSem);
-
-  if (rand() % 10 < 8) {
-    if (-1 == pthread_create(&t_id, NULL, produceSouth, NULL))
-      return -1;
-    pthread_sleep(1);
-  } else {
-    pthread_sleep(20);
+    pthread_cond_signal(&flagPersonCondition);
+    pthread_mutex_unlock(&flagPersonMutex);
+    sem_post(&carSem);
   }
-
-  return 0;
+    if (rand()%11 < 8) {
+      nextCar = true;
+      pthread_sleep(1);
+    } else {
+      nextCar = false;
+      pthread_sleep(20);
+    }
+  
+  //return 0;
 }
 
 int main() {
-  pthread_t t_id;
+  pthread_t sTid, nTid, t_id;
   int pshared = 1;
-  int value = 1;
-
+  int value = 1; //value is 1 because this is a lock
+  srand(time(NULL));
   if (pthread_mutex_init(&flagPersonMutex, NULL)) {
     return -1;
   }
@@ -136,15 +142,14 @@ int main() {
   }
 
   if (0 != sem_init(&carSem, pshared, value)) {
-    //value is 1 because this is a lock
     perror("sem_init");
     return -1;
   }
 
-  if (-1 == pthread_create(&t_id, NULL, produceNorth, NULL))
+  if (-1 == pthread_create(&nTid, NULL, produceNorth, NULL))
     return -1;
 
-  if (-1 == pthread_create(&t_id, NULL, produceSouth, NULL))
+  if (-1 == pthread_create(&sTid, NULL, produceSouth, NULL))
     return -1;
 
   while (1) {
