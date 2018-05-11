@@ -3,6 +3,8 @@
 #include <pthread.h>
 #include <time.h>
 #include <queue>
+#include <semaphore.h>
+
 //global variables to track time and be shared/usable within threads
 time_t rawTime;
 sem_t carSem;
@@ -56,7 +58,9 @@ int main() {
   pthread_t t_id;
 
   queue<car> nReadyQ;
-  
+
+  sem_init(&carSem, 1, 0);
+
   if ( -1 == pthread_create(&t_id, NULL, worker, NULL) ) {
     perror("pthread_create");
     return -1;
@@ -67,6 +71,9 @@ int main() {
     fflush(stdout);
     pthread_sleep(2);
   }
+
+  sem_destroy(&carSem);
+
   return 0;
 }
 
@@ -91,18 +98,26 @@ void *produceNorth(void *args)
   nReadyQ.push(newCar);
 }
 
-
-
-
 void *produceSouth(void *args)
 {
   struct timespec arrival;
   struct car newCar;
   carCounter++;
-  newCar.id = carCounter; 
+  newCar.id = carCounter;
   newCar.direction = 'S';
   arrival.tv_sec = (unsigned int)time(NULL);
   arrival.tv_nsec = 0;
   newCar.arrivalTime = arrival;
   sReadyQ.push(newCar);
+}
+
+void *consume(void *args)
+{
+  struct car drivingCar;
+
+  sem_wait(carSem);
+  drivingCar = sReadyQ.front();
+  sReadyQ.pop();
+  sem_post(carSem);
+
 }
