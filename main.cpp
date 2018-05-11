@@ -56,11 +56,13 @@ void *worker(void *arg) {
 *****************************************************************************/
 int main() {
   pthread_t t_id;
-
+  int pshared = 0;
+  int value = 1;
   queue<car> nReadyQ;
-
-  sem_init(&carSem, 1, 0);
-
+  queue<car> sReadyQ;
+  if(0 != sem_init(&carSem, pshared, value)) //value is 1 because this is a lock
+    perror("sem_init");
+    return -1;
   if ( -1 == pthread_create(&t_id, NULL, worker, NULL) ) {
     perror("pthread_create");
     return -1;
@@ -68,6 +70,8 @@ int main() {
 
   while(1) {
     printf("Main Running\n");
+    sem_wait(&carSem);
+    //
     fflush(stdout);
     pthread_sleep(2);
   }
@@ -89,6 +93,7 @@ void *produceNorth(void *args)
 {
   struct timespec arrival;
   struct car newCar;
+  sem_wait(&carSem);
   carCounter++;
   newCar.id = carCounter;
   newCar.direction = 'N';
@@ -96,12 +101,15 @@ void *produceNorth(void *args)
   arrival.tv_nsec = 0;
   newCar.arrivalTime = arrival;
   nReadyQ.push(newCar);
+  sem_post(&carSem);
 }
+
 
 void *produceSouth(void *args)
 {
   struct timespec arrival;
   struct car newCar;
+  sem_wait(&carSem);
   carCounter++;
   newCar.id = carCounter;
   newCar.direction = 'S';
@@ -109,6 +117,7 @@ void *produceSouth(void *args)
   arrival.tv_nsec = 0;
   newCar.arrivalTime = arrival;
   sReadyQ.push(newCar);
+  sem_post(&carSem);
 }
 
 void *consume(void *args)
