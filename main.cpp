@@ -61,42 +61,12 @@ int pthread_sleep (int seconds) {
 * that also is an infinite loop. We should see two messages from the worker
 * for every one from main.
 *****************************************************************************/
-int main() {
-  pthread_t t_id;
-  int pshared = 1;
-  int value = 1;
-
-  if (pthread_mutex_init(&flagPersonMutex, NULL)) {
-    return -1;
-  }
-  if (pthread_cond_init(&flagPersonCondition, NULL)) {
-    return -1;
-  }
-
-  if (0 != sem_init(&carSem, pshared, value)) {
-    //value is 1 because this is a lock
-    perror("sem_init");
-    return -1;
-  }
-
-  while (1) {
-    printf("Main Running\n");
-    fflush(stdout);
-    pthread_sleep(1);
-  }
-
-  sem_close(&carSem);
-  pthread_mutex_destroy(&flagPersonMutex);
-  pthread_cond_destroy(&flagPersonCondition);
-
-  return 0;
-}
 
 void *produceNorth(void *args)
 {
   struct timespec arrival;
   struct car newCar;
-
+  cout<<"in north" << endl;
   sem_wait(&carSem);
   pthread_mutex_lock(&flagPersonMutex);
 
@@ -114,8 +84,6 @@ void *produceNorth(void *args)
 
   return 0;
 }
-
-
 void *produceSouth(void *args)
 {
   struct timespec arrival;
@@ -123,7 +91,7 @@ void *produceSouth(void *args)
 
   sem_wait(&carSem);
   pthread_mutex_lock(&flagPersonMutex);
-
+  cout << "in south " << endl;
   carCounter++;
   newCar.id = carCounter;
   newCar.direction = 'S';
@@ -135,6 +103,39 @@ void *produceSouth(void *args)
   pthread_cond_signal(&flagPersonCondition);
   pthread_mutex_unlock(&flagPersonMutex);
   sem_post(&carSem);
+
+  return 0;
+}
+
+int main() {
+  pthread_t t_id;
+  int pshared = 1;
+  int value = 1;
+
+  if (pthread_mutex_init(&flagPersonMutex, NULL)) {
+    return -1;
+  }
+  if (pthread_cond_init(&flagPersonCondition, NULL)) {
+    return -1;
+  }
+  if(-1 == pthread_create(&t_id, NULL, produceSouth, NULL))
+    return -1;
+
+  if (0 != sem_init(&carSem, pshared, value)) {
+    //value is 1 because this is a lock
+    perror("sem_init");
+    return -1;
+  }
+
+  while (1) {
+    printf("Main Running\n");
+    fflush(stdout);
+    pthread_sleep(1);
+  }
+
+  sem_close(&carSem);
+  pthread_mutex_destroy(&flagPersonMutex);
+  pthread_cond_destroy(&flagPersonCondition);
 
   return 0;
 }
