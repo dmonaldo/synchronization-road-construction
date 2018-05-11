@@ -18,11 +18,13 @@ pthread_cond_t flagPersonCondition;
 // Keep track of number of cars that have been created
 int carCounter = 0;
 
+string flagPersonDirection = "";
+
 struct car {
   int id;
   char direction;
   struct timespec arrivalTime; // when they appear on the road
-  struct timespec startTime,
+  struct timespec startTime;
   struct timespec endTime;
 };
 
@@ -61,7 +63,7 @@ int pthread_sleep (int seconds) {
 *****************************************************************************/
 int main() {
   pthread_t t_id;
-  int pshared = 0;
+  int pshared = 1;
   int value = 1;
 
   if (pthread_mutex_init(&flagPersonMutex, NULL)) {
@@ -71,7 +73,7 @@ int main() {
     return -1;
   }
 
-  if (0 != sem_open("mySem", carSem, pshared, value)) {
+  if (0 != sem_init(&carSem, pshared, value)) {
     //value is 1 because this is a lock
     perror("sem_init");
     return -1;
@@ -143,9 +145,43 @@ void *consume(void *args)
 
   pthread_mutex_lock(&flagPersonMutex);
 
-  while (sReadyQ.size() == 0 && nReadyQ.size() == 0) {
+  while (sReadyQ.size() == 0 || nReadyQ.size() == 0) {
     cout << "consumer waiting..." << endl;
     pthread_cond_wait(&flagPersonCondition, &flagPersonMutex);
+  }
+
+  cout << "consumer not waiting: " << flagPersonDirection << endl;
+
+  if (flagPersonDirection == "north") {
+    if (sReadyQ.size() >= 10) {
+      drivingCar = sReadyQ.front();
+      sReadyQ.pop();
+      flagPersonDirection = "south";
+    } else {
+      drivingCar = nReadyQ.front();
+      nReadyQ.pop();
+    }
+  } else if (flagPersonDirection == "south") {
+
+    if (nReadyQ.size() >= 10) {
+      drivingCar = nReadyQ.front();
+      nReadyQ.pop();
+      flagPersonDirection = "north";
+    } else {
+      drivingCar = sReadyQ.front();
+      sReadyQ.pop();
+    }
+  } else {
+
+    if (sReadyQ.size() > nReadyQ.size()) {
+      drivingCar = sReadyQ.front();
+      sReadyQ.pop();
+      flagPersonDirection = "south";
+    } else {
+      drivingCar = nReadyQ.front();
+      nReadyQ.pop();
+      flagPersonDirection = "north";
+    }
   }
 
   pthread_mutex_unlock(&flagPersonMutex);
