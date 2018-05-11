@@ -9,7 +9,7 @@
 using namespace std;
 
 // Global variables to track time and be shared/usable within threads
-time_t rawTime;
+//time_t rawTime;
 sem_t carSem;
 
 // Initialize mutex variables
@@ -23,8 +23,9 @@ struct car {
   int id;
   char direction;
   struct timespec arrivalTime; // when they appear on the road
-  struct timespec startTime;
+  struct timespec startTime,
   struct timespec endTime;
+  
 };
 
 queue<car> nReadyQ;
