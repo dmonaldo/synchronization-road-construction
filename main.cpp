@@ -140,9 +140,9 @@ void processCar() {
     sReadyQ.pop();
   }
 
-  cout << left << setw(12) << processedCar.id << processedCar.direction << processedCar.arrivalTime << endl;
+  cout << left << setw(12) << processedCar.id << processedCar.direction << endl;
   carLog.open("car.log", ios_base::app);
-  carLog << left << setw(12) << processedCar.id << processedCar.direction << processedCar.arrivalTime << "\n";
+  carLog << left << setw(12) << processedCar.id << processedCar.direction << "\n";
   carLog.close();
 
   return;
