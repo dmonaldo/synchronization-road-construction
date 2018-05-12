@@ -18,7 +18,7 @@ pthread_cond_t flagPersonCondition;
 // Keep track of number of cars that have been created
 int carCounter = 0;
 
-string flagPersonDirection = "";
+string currentDirection = "";
 
 struct car {
   int id;
@@ -87,10 +87,10 @@ void *produceNorth(void *args)
   pthread_mutex_unlock(&flagPersonMutex);
   sem_post(&carSem);
   }
-  //} 
+  //}
 
   //pthread_sleep(20);
-  
+
   //  return 0;
 }
 void *produceSouth(void *args)
@@ -125,61 +125,77 @@ void *produceSouth(void *args)
   //} else {
   //  nextCar = false;
   //pthread_sleep(20);
-  
+
       //}
-  
+
   //return 0;
 }
+
+void switchDirection() {
+  if (currentDirection == "north") {
+    currentDirection == "south";
+  } else {
+    currentDirection == "north";
+  }
+  return;
+}
+
+void processCar() {
+  struct car drivingCar;
+  if (currentDirection == "north") {
+    drivingCar = nReadyQ.front();
+    nReadyQ.pop();
+  } else {
+    drivingCar = sReadyQ.front();
+    sReadyQ.pop();
+  }
+  // Write car to log
+  return;
+}
+
+void workerSleep() {
+  cout << "worker is sleeping" << endl;
+  pthread_sleep(1);
+}
+
 void *consume(void *args)
 {
-  struct car drivingCar;
+  while (1) {
 
-  pthread_mutex_lock(&flagPersonMutex);
+    pthread_mutex_lock(&flagPersonMutex);
 
-  while (sReadyQ.size() == 0 || nReadyQ.size() == 0) {
-    cout << "consumer waiting..." << endl;
-    pthread_cond_wait(&flagPersonCondition, &flagPersonMutex);
+    // while (sReadyQ.size() == 0 || nReadyQ.size() == 0) {
+    //   cout << "consumer waiting..." << endl;
+    //   pthread_cond_wait(&flagPersonCondition, &flagPersonMutex);
+    // }
+
+    cout << "consumer not waiting: " << currentDirection << endl;
+    //first check if north or south is above ten then its priority and if this is
+    //not met then its arbitrary and
+
+    if (currentDirection == "north") {
+      if (sReadyQ.size() >= 10) {
+        switchDirection();
+      } else if (nReadyQ.size() == 0) {
+        workerSleep();
+      } else {
+        processCar();
+      }
+    }
+    else {
+      if (nReadyQ.size() >= 10) {
+        switchDirection();
+      } else if (sReadyQ.size() == 0) {
+        workerSleep();
+      } else {
+        processCar();
+      }
+    }
+
+    pthread_mutex_unlock(&flagPersonMutex);
+
   }
 
-  cout << "consumer not waiting: " << flagPersonDirection << endl;
-  //first check if north or south is above ten then its priority and if this is
-  //not met then its arbitrary and  
-  if (flagPersonDirection == "north") {
-    if (sReadyQ.size() >= 10) {
-      drivingCar = sReadyQ.front();
-      sReadyQ.pop();
-      flagPersonDirection = "south";
-    } else {
-      drivingCar = nReadyQ.front();
-      nReadyQ.pop();
-    }
-  } else if (flagPersonDirection == "south") {
-
-    if (nReadyQ.size() >= 10) {
-      drivingCar = nReadyQ.front();
-      nReadyQ.pop();
-      flagPersonDirection = "north";
-    } else {
-      drivingCar = sReadyQ.front();
-      sReadyQ.pop();
-    }
-  } else {
-
-    if (sReadyQ.size() > nReadyQ.size()) {
-      drivingCar = sReadyQ.front();
-      sReadyQ.pop();
-      flagPersonDirection = "south";
-    } else {
-      drivingCar = nReadyQ.front();
-      nReadyQ.pop();
-      flagPersonDirection = "north";
-    }
-  }
-
-  pthread_mutex_unlock(&flagPersonMutex);
-
-  // drivingCar = sReadyQ.front();
-  // sReadyQ.pop();
   return 0;
 }
 
@@ -223,56 +239,3 @@ int main() {
 
   return 0;
 }
-/* 
-void *consume(void *args)
-{
-  struct car drivingCar;
-
-  pthread_mutex_lock(&flagPersonMutex);
-
-  while (sReadyQ.size() == 0 || nReadyQ.size() == 0) {
-    cout << "consumer waiting..." << endl;
-    pthread_cond_wait(&flagPersonCondition, &flagPersonMutex);
-  }
-
-  cout << "consumer not waiting: " << flagPersonDirection << endl;
-
-  if (flagPersonDirection == "north") {
-    if (sReadyQ.size() >= 10) {
-      drivingCar = sReadyQ.front();
-      sReadyQ.pop();
-      flagPersonDirection = "south";
-    } else {
-      drivingCar = nReadyQ.front();
-      nReadyQ.pop();
-    }
-  } else if (flagPersonDirection == "south") {
-
-    if (nReadyQ.size() >= 10) {
-      drivingCar = nReadyQ.front();
-      nReadyQ.pop();
-      flagPersonDirection = "north";
-    } else {
-      drivingCar = sReadyQ.front();
-      sReadyQ.pop();
-    }
-  } else {
-
-    if (sReadyQ.size() > nReadyQ.size()) {
-      drivingCar = sReadyQ.front();
-      sReadyQ.pop();
-      flagPersonDirection = "south";
-    } else {
-      drivingCar = nReadyQ.front();
-      nReadyQ.pop();
-      flagPersonDirection = "north";
-    }
-  }
-
-  pthread_mutex_unlock(&flagPersonMutex);
-
-  // drivingCar = sReadyQ.front();
-  // sReadyQ.pop();
-  return 0;
-}
-*/
