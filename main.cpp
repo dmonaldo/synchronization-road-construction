@@ -6,6 +6,7 @@
 #include <semaphore.h>
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -19,6 +20,7 @@ pthread_cond_t flagPersonCondition;
 // Keep track of number of cars that have been created
 int carCounter = 0;
 
+// Direction that incoming cars are arriving from
 string currentDirection = "";
 
 struct car {
@@ -66,7 +68,6 @@ int pthread_sleep (int seconds) {
 car createCar(char direction) {
   struct timespec arrival;
   struct car newCar;
-  ofstream carLog;
 
   carCounter++;
   newCar.id = carCounter;
@@ -74,10 +75,6 @@ car createCar(char direction) {
   arrival.tv_sec = (unsigned int)time(NULL);
   arrival.tv_nsec = 0;
   newCar.arrivalTime = arrival;
-
-  carLog.open("car.log");
-  carLog << "process asleep @ " << time(NULL) << "\n";
-  carLog.close();
 
   return newCar;
 }
@@ -134,15 +131,22 @@ void switchDirection() {
 }
 
 void processCar() {
-  struct car drivingCar;
+  struct car processedCar;
+  ofstream carLog;
+
   if (currentDirection == "north") {
-    drivingCar = nReadyQ.front();
+   processedCar = nReadyQ.front();
     nReadyQ.pop();
   } else {
-    drivingCar = sReadyQ.front();
+   processedCar = sReadyQ.front();
     sReadyQ.pop();
   }
-  cout << "Car removed from " << currentDirection << " queue. " << drivingCar.id << endl;
+
+  cout << "Car removed from " << currentDirection << " queue. " << processedCar.id << endl;
+  carLog.open("car.log");
+  carLog << left << setw(12) << processedCar.id << processedCar.direction << processedCar.arrivalTime << "\n";
+  carLog.close();
+
   return;
 }
 
@@ -153,36 +157,29 @@ void workerSleep() {
     cout << "process asleep @ " << time(NULL) << endl;
 
     flagPersonLog.open("flagperson.log");
-    flagPersonLog << "process asleep @ " << time(NULL) << "\n";
+    flagPersonLog << left << setw (12) << time(NULL) << "sleep\n";
     flagPersonLog.close();
-    pthread_sleep(1);
+    // pthread_sleep(1);
+    pthread_cond_wait(&flagPersonCondition, &flagPersonMutex);
   }
 
   cout << "process awake @ " << time(NULL) << endl;
   flagPersonLog.open("flagperson.log");
-  flagPersonLog << "process awake @ " << time(NULL) << "\n";
-  flagPersonLog.close()
+  flagPersonLog << left << setw (12) << time(NULL) << "woken-up\n";
+  flagPersonLog.close();
 }
 
 void *consume(void *args)
 {
   while (1) {
-
     pthread_mutex_lock(&flagPersonMutex);
 
-    // while (sReadyQ.size() == 0 || nReadyQ.size() == 0) {
-    //   cout << "consumer waiting..." << endl;
-    //   pthread_cond_wait(&flagPersonCondition, &flagPersonMutex);
-    // }
-
     cout << "consumer not waiting: " << currentDirection << endl;
-    //first check if north or south is above ten then its priority and if this is
-    //not met then its arbitrary and
 
     if (currentDirection == "north") {
       if (sReadyQ.size() >= 10) {
         switchDirection();
-      } else if (nReadyQ.size() == 0) {
+      } else if (nReadyQ.empty()) {
         workerSleep();
       } else {
         processCar();
@@ -191,7 +188,7 @@ void *consume(void *args)
     else {
       if (nReadyQ.size() >= 10) {
         switchDirection();
-      } else if (sReadyQ.size() == 0) {
+      } else if (sReadyQ.empty()) {
         workerSleep();
       } else {
         processCar();
@@ -199,7 +196,6 @@ void *consume(void *args)
     }
 
     pthread_mutex_unlock(&flagPersonMutex);
-
   }
 
   return 0;
@@ -213,11 +209,15 @@ int main() {
   srand(time(NULL));
 
   if (pthread_mutex_init(&flagPersonMutex, NULL)) {
+    perror("mutex_init");
     return -1;
   }
+
   if (pthread_cond_init(&flagPersonCondition, NULL)) {
+    perror("cond_init");
     return -1;
   }
+
   if (0 != sem_init(&carSem, pshared, value)) {
     perror("sem_init");
     return -1;
@@ -240,9 +240,7 @@ int main() {
     fflush(stdout);
     pthread_sleep(1);
   }
-  //pthread_join(produceNorth, NULL);
-  //pthread_join(produceSouth, NULL);
-  //  pthread_join(consume, NULL);
+
   sem_close(&carSem);
   pthread_mutex_destroy(&flagPersonMutex);
   pthread_cond_destroy(&flagPersonCondition);
