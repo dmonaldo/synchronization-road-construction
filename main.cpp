@@ -59,12 +59,6 @@ int pthread_sleep (int seconds) {
   return pthread_cond_timedwait(&conditionvar, &mutex, &timetoexpire);
 }
 
-/******************************************************************************
-* The main function is just an infinite loop that spawns off a second thread
-* that also is an infinite loop. We should see two messages from the worker
-* for every one from main.
-*****************************************************************************/
-
 car createCar(char direction) {
   struct timespec arrival;
   struct car newCar;
@@ -79,8 +73,8 @@ car createCar(char direction) {
   return newCar;
 }
 
-void *produceNorth(void *args)
-{
+// Car producer in the North direction
+void *produceNorth(void *args) {
   cout <<"in north" << endl;
 
   while (1) {
@@ -100,8 +94,8 @@ void *produceNorth(void *args)
   }
 }
 
-void *produceSouth(void *args)
-{
+// Car producer thread in the South direction
+void *produceSouth(void *args) {
   cout << "in south " << endl;
 
   while (1) {
@@ -121,6 +115,8 @@ void *produceSouth(void *args)
   }
 }
 
+// Changes the direction of traffic that the flag person is allowing to pass
+// through the construction zone
 void switchDirection() {
   if (currentDirection == "north") {
     currentDirection == "south";
@@ -130,6 +126,8 @@ void switchDirection() {
   return;
 }
 
+// Removes a car from the queue
+// Simulates a car passing through the construction zone
 void processCar() {
   struct car processedCar;
   ofstream carLog;
@@ -142,35 +140,36 @@ void processCar() {
     sReadyQ.pop();
   }
 
-  cout << "Car removed from " << currentDirection << " queue. " << processedCar.id << endl;
-  carLog.open("car.log");
+  cout << left << setw(12) << processedCar.id << processedCar.direction << processedCar.arrivalTime << endl;
+  carLog.open("car.log", ios_base::app);
   carLog << left << setw(12) << processedCar.id << processedCar.direction << processedCar.arrivalTime << "\n";
   carLog.close();
 
   return;
 }
 
+// Determines whether the flag person should be awake or asleep
 void workerSleep() {
   ofstream flagPersonLog;
 
   while (!nReadyQ.empty() && !sReadyQ.empty()) {
-    cout << "process asleep @ " << time(NULL) << endl;
+    cout << left << setw (12) << time(NULL) << "sleep" << endl;
 
-    flagPersonLog.open("flagperson.log");
+    flagPersonLog.open("flagperson.log", ios_base::app);
     flagPersonLog << left << setw (12) << time(NULL) << "sleep\n";
     flagPersonLog.close();
     // pthread_sleep(1);
     pthread_cond_wait(&flagPersonCondition, &flagPersonMutex);
   }
 
-  cout << "process awake @ " << time(NULL) << endl;
-  flagPersonLog.open("flagperson.log");
+  cout << left << setw (12) << time(NULL) << "woken-up" << endl;
+  flagPersonLog.open("flagperson.log", ios_base::app);
   flagPersonLog << left << setw (12) << time(NULL) << "woken-up\n";
   flagPersonLog.close();
 }
 
-void *consume(void *args)
-{
+// Car consumer thread
+void *consume(void *args) {
   while (1) {
     pthread_mutex_lock(&flagPersonMutex);
 
@@ -201,7 +200,11 @@ void *consume(void *args)
   return 0;
 }
 
-
+/******************************************************************************
+* The main function is just an infinite loop that spawns off a second thread
+* that also is an infinite loop. We should see two messages from the worker
+* for every one from main.
+*****************************************************************************/
 int main() {
   pthread_t sTid, nTid, t_id, fTid;
   int pshared = 1;
