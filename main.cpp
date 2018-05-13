@@ -206,22 +206,35 @@ void *consume(void *args) {
 * for every one from main.
 *****************************************************************************/
 int main() {
-  pthread_t sTid, nTid, t_id, fTid;
+  pthread_t sTid, nTid, fTid;
   int pshared = 1;
-  int value = 1; //value is 1 because this is a lock
+  int semValue = 1; //value is 1 because this is a lock
   srand(time(NULL));
 
+  // Begin log files
+  ofstream carLog;
+  ofStream flagPersonLog;
+  carLog.open("car.log");
+  carLog << left << setw(12) << "carID" << "direction" << "arrival-time" << "start-time" << "end-time\n";
+  carLog.close();
+  flagPersonLog.open("flagperson.log");
+  flagPersonLog << left << setw (12) << "time" << "state\n";
+  flagPersonLog.close();
+
+  // Initialize mutex
   if (pthread_mutex_init(&flagPersonMutex, NULL)) {
     perror("mutex_init");
     return -1;
   }
 
+  // Initialize conditional variable
   if (pthread_cond_init(&flagPersonCondition, NULL)) {
     perror("cond_init");
     return -1;
   }
 
-  if (0 != sem_init(&carSem, pshared, value)) {
+  // Initialize semaphore
+  if (0 != sem_init(&carSem, pshared, semValue)) {
     perror("sem_init");
     return -1;
   }
