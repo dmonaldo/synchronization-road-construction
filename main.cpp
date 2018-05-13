@@ -21,7 +21,7 @@ pthread_cond_t flagPersonCondition;
 int carCounter = 0;
 
 // Direction that incoming cars are arriving from
-string currentDirection = "";
+string currentDirection = "north";
 
 struct car {
   int id;
@@ -58,32 +58,27 @@ int pthread_sleep (int seconds) {
   timetoexpire.tv_nsec = 0;
   return pthread_cond_timedwait(&conditionvar, &mutex, &timetoexpire);
 }
-
-car createCar(char direction) {
-  struct timespec arrival;
-  struct car newCar;
-
-  carCounter++;
-  newCar.id = carCounter;
-  newCar.direction = direction;
-  arrival.tv_sec = (unsigned int)time(NULL);
-  arrival.tv_nsec = 0;
-  newCar.arrivalTime = arrival;
-
-  return newCar;
-}
-
 // Car producer in the North direction
 void *produceNorth(void *args) {
   cout <<"in north" << endl;
-
+  struct timespec arrival;
+  struct car newCar;
+  
   while (1) {
     sem_wait(&carSem);
     pthread_mutex_lock(&flagPersonMutex);
 
     while ((rand() % 10) < 8) {
       cout << "in north locks" << endl;
-      nReadyQ.push(createCar('N'));
+      carCounter++;
+      newCar.id = carCounter;
+      newCar.direction = 'N';
+      arrival.tv_sec = (unsigned int)time(NULL);
+      arrival.tv_nsec = 0;
+      newCar.arrivalTime = arrival;
+
+      
+      nReadyQ.push(newCar);
     }
 
     cout << "north sleep 20" << endl;
@@ -97,14 +92,23 @@ void *produceNorth(void *args) {
 // Car producer thread in the South direction
 void *produceSouth(void *args) {
   cout << "in south " << endl;
-
+  struct timespec arrival;
+  struct car newCar;
+  
   while (1) {
     sem_wait(&carSem);
     pthread_mutex_lock(&flagPersonMutex);
 
     while ((rand() % 10) < 8) {
       cout << "in south locks" << endl;
-      sReadyQ.push(createCar('N'));
+      carCounter++;
+      newCar.id = carCounter;
+      newCar.direction = 'S';
+      arrival.tv_sec = (unsigned int)time(NULL);
+      arrival.tv_nsec = 0;
+      newCar.arrivalTime = arrival;
+      sReadyQ.push(newCar);
+      
     }
 
     cout << "south sleep 20" << endl;
@@ -132,17 +136,21 @@ void processCar() {
   struct car processedCar;
   ofstream carLog;
 
-  if (currentDirection == "north") {
-   processedCar = nReadyQ.front();
+  if(currentDirection == "north"){
+    processedCar = nReadyQ.front();
+    pthread_sleep(1);
     nReadyQ.pop();
-  } else {
-   processedCar = sReadyQ.front();
+  }else{
+    processedCar = sReadyQ.front();
+    pthread_sleep(1);
     sReadyQ.pop();
   }
 
-  cout << left << setw(12) << processedCar.id << processedCar.direction << endl;
+  cout << left << setw(12) << processedCar.id << processedCar.direction
+       << endl;
   carLog.open("car.log", ios_base::app);
-  carLog << left << setw(12) << processedCar.id << processedCar.direction << "\n";
+  carLog << left << setw(12) << processedCar.id << processedCar.direction
+         << "\n";
   carLog.close();
 
   return;
@@ -158,7 +166,7 @@ void workerSleep() {
     flagPersonLog.open("flagperson.log", ios_base::app);
     flagPersonLog << left << setw (12) << time(NULL) << "sleep\n";
     flagPersonLog.close();
-    // pthread_sleep(1);
+    pthread_sleep(1);
     pthread_cond_wait(&flagPersonCondition, &flagPersonMutex);
   }
 
@@ -175,19 +183,24 @@ void *consume(void *args) {
 
     cout << "consumer not waiting: " << currentDirection << endl;
 
-    if (currentDirection == "north") {
-      if (sReadyQ.size() >= 10) {
+    if(currentDirection == "north") {
+      if((sReadyQ.size() >= 10) && (nReadyQ.size() < 10)){
         switchDirection();
-      } else if (nReadyQ.empty()) {
+      }else if(nReadyQ.empty() && sReadyQ.size() >= 10){
+        switchDirection();
+      }else if(nReadyQ.empty()){
         workerSleep();
-      } else {
+      }
+      else{
         processCar();
       }
     }
     else {
-      if (nReadyQ.size() >= 10) {
+      if (nReadyQ.size() >= 10 && sReadyQ.size() < 10) {
         switchDirection();
-      } else if (sReadyQ.empty()) {
+      } else if (sReadyQ.empty() && nReadyQ.size() >= 10) {
+        switchDirection();
+      }else if(sReadyQ.empty()){
         workerSleep();
       } else {
         processCar();
