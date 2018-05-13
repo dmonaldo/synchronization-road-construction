@@ -183,11 +183,11 @@ void *consume(void *args) {
     if (currentDirection == "north") {
       if ((sReadyQ.size() >= 10) && (nReadyQ.size() < 10)) {
         switchDirection();
-      } else if(nReadyQ.empty() && sReadyQ.size() >= 10) {
+      } else if (nReadyQ.empty() && sReadyQ.size() >= 10) {
         switchDirection();
-      } else if(nReadyQ.empty()) {
+      } else if (nReadyQ.empty()) {
         workerSleep();
-      } else{
+      } else {
         processCar();
       }
     }
@@ -261,7 +261,6 @@ int main() {
     return -1;
 
   while (1) {
-    printf("Main Running\n");
     fflush(stdout);
     pthread_sleep(1);
   }

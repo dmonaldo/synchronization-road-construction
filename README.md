@@ -7,7 +7,7 @@ During the times when no cars are at either end, the flag person will fall aslee
 
 Your job is to construct a simulation of these events where under no conditions will a deadlock occur. A deadlock could either be that the flag person does not allow traffic through from either side, or let’s traffic through from both sides causing an accident.
 
-##Team members and contributions
+## Team members and contributions
 Team member: Alex Runciman (@agrsu)
 Contributions: producer functions
 Percentage of contributions:
@@ -16,7 +16,7 @@ Team member: Dante Monaldo (@dmonaldo)
 Contributions: consumer functions
 Percentage of contributions:
 
-##Thread information
+## Thread information
 Total threads: 3
 
 [Thread #1]
@@ -31,7 +31,7 @@ Total threads: 3
  --> Task: consumer that allows cars to pass through the construction zone
  --> Thread function name: consume()
 
-##Semaphores
+## Semaphores
 Number of semaphores: 1
 
 [Sempahore #1]
@@ -39,14 +39,14 @@ Number of semaphores: 1
   --> Initial value: 1
   --> Purpose: make xxx blocked upon on events xxxx
 
-##Mutex lock
+## Mutex lock
 Number of mutex locks: 1
 
 [Mutex lock #1]
   --> Variable: flagPersonMutex
   --> Purpose: avoid race condition on shared data structure xxxx
 
-##Strengths
+## Strengths
 
 
 
@@ -56,4 +56,4 @@ Number of mutex locks: 1
 
 
 
-##Weaknesses
+## Weaknesses
