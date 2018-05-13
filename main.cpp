@@ -63,7 +63,7 @@ void *produceNorth(void *args) {
   cout <<"in north" << endl;
   struct timespec arrival;
   struct car newCar;
-  
+
   while (1) {
     sem_wait(&carSem);
     pthread_mutex_lock(&flagPersonMutex);
@@ -76,8 +76,6 @@ void *produceNorth(void *args) {
       arrival.tv_sec = (unsigned int)time(NULL);
       arrival.tv_nsec = 0;
       newCar.arrivalTime = arrival;
-
-      
       nReadyQ.push(newCar);
     }
 
@@ -94,7 +92,7 @@ void *produceSouth(void *args) {
   cout << "in south " << endl;
   struct timespec arrival;
   struct car newCar;
-  
+
   while (1) {
     sem_wait(&carSem);
     pthread_mutex_lock(&flagPersonMutex);
@@ -108,7 +106,6 @@ void *produceSouth(void *args) {
       arrival.tv_nsec = 0;
       newCar.arrivalTime = arrival;
       sReadyQ.push(newCar);
-      
     }
 
     cout << "south sleep 20" << endl;
@@ -136,11 +133,11 @@ void processCar() {
   struct car processedCar;
   ofstream carLog;
 
-  if(currentDirection == "north"){
+  if (currentDirection == "north") {
     processedCar = nReadyQ.front();
     pthread_sleep(1);
     nReadyQ.pop();
-  }else{
+  } else {
     processedCar = sReadyQ.front();
     pthread_sleep(1);
     sReadyQ.pop();
@@ -183,15 +180,14 @@ void *consume(void *args) {
 
     cout << "consumer not waiting: " << currentDirection << endl;
 
-    if(currentDirection == "north") {
-      if((sReadyQ.size() >= 10) && (nReadyQ.size() < 10)){
+    if (currentDirection == "north") {
+      if ((sReadyQ.size() >= 10) && (nReadyQ.size() < 10)) {
         switchDirection();
-      }else if(nReadyQ.empty() && sReadyQ.size() >= 10){
+      } else if(nReadyQ.empty() && sReadyQ.size() >= 10) {
         switchDirection();
-      }else if(nReadyQ.empty()){
+      } else if(nReadyQ.empty()) {
         workerSleep();
-      }
-      else{
+      } else{
         processCar();
       }
     }
@@ -200,7 +196,7 @@ void *consume(void *args) {
         switchDirection();
       } else if (sReadyQ.empty() && nReadyQ.size() >= 10) {
         switchDirection();
-      }else if(sReadyQ.empty()){
+      } else if (sReadyQ.empty()) {
         workerSleep();
       } else {
         processCar();
@@ -219,22 +215,35 @@ void *consume(void *args) {
 * for every one from main.
 *****************************************************************************/
 int main() {
-  pthread_t sTid, nTid, t_id, fTid;
+  pthread_t sTid, nTid, fTid;
   int pshared = 1;
-  int value = 1; //value is 1 because this is a lock
+  int semValue = 1; //value is 1 because this is a lock
   srand(time(NULL));
 
+  // Begin log files
+  ofstream carLogInitial;
+  carLogInitial.open("car.log");
+  carLogInitial << left << setw(12) << "carID" << "direction" << "arrival-time" << "start-time" << "end-time\n";
+  carLogInitial.close();
+  ofStream flagPersonLogInitial;
+  flagPersonLogInitial.open("flagperson.log");
+  flagPersonLogInitial << left << setw (12) << "time" << "state\n";
+  flagPersonLogInitial.close();
+
+  // Initialize mutex
   if (pthread_mutex_init(&flagPersonMutex, NULL)) {
     perror("mutex_init");
     return -1;
   }
 
+  // Initialize conditional variable
   if (pthread_cond_init(&flagPersonCondition, NULL)) {
     perror("cond_init");
     return -1;
   }
 
-  if (0 != sem_init(&carSem, pshared, value)) {
+  // Initialize semaphore
+  if (0 != sem_init(&carSem, pshared, semValue)) {
     perror("sem_init");
     return -1;
   }
