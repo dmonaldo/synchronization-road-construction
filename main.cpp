@@ -221,14 +221,14 @@ int main() {
   srand(time(NULL));
 
   // Begin log files
-  ofstream carLog;
-  ofStream flagPersonLog;
-  carLog.open("car.log");
-  carLog << left << setw(12) << "carID" << "direction" << "arrival-time" << "start-time" << "end-time\n";
-  carLog.close();
-  flagPersonLog.open("flagperson.log");
-  flagPersonLog << left << setw (12) << "time" << "state\n";
-  flagPersonLog.close();
+  ofstream carLogInitial;
+  carLogInitial.open("car.log");
+  carLogInitial << left << setw(12) << "carID" << "direction" << "arrival-time" << "start-time" << "end-time\n";
+  carLogInitial.close();
+  ofStream flagPersonLogInitial;
+  flagPersonLogInitial.open("flagperson.log");
+  flagPersonLogInitial << left << setw (12) << "time" << "state\n";
+  flagPersonLogInitial.close();
 
   // Initialize mutex
   if (pthread_mutex_init(&flagPersonMutex, NULL)) {
