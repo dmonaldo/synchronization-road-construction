@@ -77,6 +77,7 @@ void *produceNorth(void *args) {
       arrival.tv_nsec = 0;
       newCar.arrivalTime = arrival;
       nReadyQ.push(newCar);
+      pthread_sleep(1);
     }
 
     cout << "north sleep 20" << endl;
@@ -106,6 +107,7 @@ void *produceSouth(void *args) {
       arrival.tv_nsec = 0;
       newCar.arrivalTime = arrival;
       sReadyQ.push(newCar);
+      pthread_sleep(1);
     }
 
     cout << "south sleep 20" << endl;
