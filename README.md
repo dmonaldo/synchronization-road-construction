@@ -1,5 +1,6 @@
 # synchronization-road-construction
-Models a a common roadway occurrence, where a lane is closed and a flag person is directing traffic.
+Models a common roadway occurrence, where a lane is closed and a flag person 
+is directing traffic.
 
 ///////// Team member's name and contributions //////////////////////
 Team member #1: Dante Monaldo
@@ -7,13 +8,14 @@ Contributions:
 Percentage of contributions:
 
 Team member #2: Alex Runciman
-Contributions:
-Percentage of contributions:
+Contributions: produceNorth, produceS, consume
+Percentage of contributions:100% of produceNorth and produceSouth, 
+designed consume entirely (except for locks) and a few lines wrote in consume
 
 
 
 /////// Thread information /////////////////////////////////////////
-Total threads:
+Total threads: 3
 
 [Thread #1]
   --> Task: producer that produces xxxx
@@ -28,7 +30,7 @@ Total threads:
 
 
 ////// Semaphores ////////////////////////////////////////////////
-Number of semaphores:
+Number of semaphores: 1
 
 [Sempahore #1]
   --> Variable:
@@ -40,7 +42,7 @@ Number of semaphores:
 
 
 ////// Mutex lock ///////////////////////////////////////////////
-Number of mutex locks:
+Number of mutex locks: 
 
 [Mutex lock #1]
   --> Variable:
