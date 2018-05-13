@@ -19,32 +19,32 @@ Percentage of contributions: 50%\n
 ## Thread information
 Total threads: 3
 
-[Thread #1]\n
-  --> Task: producer that produces cars in the North direction\n
-  --> Thread function name: produceNorth()\n
+[Thread #1]
+- Task: producer that produces cars in the North direction
+- Thread function name: produceNorth()
 
-[Thread #2]\n
-  --> Task: producer that produces cars in the South direction\n
-  --> Thread function name: produceSouth()\n
+[Thread #2]
+- Task: producer that produces cars in the South direction
+- Thread function name: produceSouth()
 
-[Thread #3]\n
- --> Task: consumer that allows cars to pass through the construction zone\n
- --> Thread function name: consume()\n
+[Thread #3]
+- Task: consumer that allows cars to pass through the construction zone
+- Thread function name: consume()
 
 ## Semaphores
 Number of semaphores: 1
 
-[Sempahore #1]\n
-  --> Variable: carSem\n
-  --> Initial value: 1\n
-  --> Purpose: make xxx blocked upon on events xxxx\n
+[Sempahore #1]
+- Variable: carSem
+- Initial value: 1
+- Purpose: make xxx blocked upon on events xxxx
 
 ## Mutex lock
 Number of mutex locks: 1
 
-[Mutex lock #1]\n
-  --> Variable: flagPersonMutex\n
-  --> Purpose: avoid race condition on shared data structure xxxx\n
+[Mutex lock #1]
+- Variable: flagPersonMutex
+- Purpose: avoid race condition on shared data structure xxxx
 
 ## Strengths
 
