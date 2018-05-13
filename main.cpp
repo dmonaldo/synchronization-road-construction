@@ -86,7 +86,7 @@ void *produceNorth(void *args) {
     pthread_mutex_unlock(&flagPersonMutex);
     sem_post(&carSem);
   }
-  return;
+  return 0;
 }
 
 // Car producer thread in the South direction
@@ -117,7 +117,7 @@ void *produceSouth(void *args) {
     pthread_mutex_unlock(&flagPersonMutex);
     sem_post(&carSem);
   }
-  return;
+  return 0;
 }
 
 // Changes the direction of traffic that the flag person is allowing to pass
