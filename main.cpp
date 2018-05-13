@@ -86,6 +86,7 @@ void *produceNorth(void *args) {
     pthread_mutex_unlock(&flagPersonMutex);
     sem_post(&carSem);
   }
+  return;
 }
 
 // Car producer thread in the South direction
@@ -116,6 +117,7 @@ void *produceSouth(void *args) {
     pthread_mutex_unlock(&flagPersonMutex);
     sem_post(&carSem);
   }
+  return;
 }
 
 // Changes the direction of traffic that the flag person is allowing to pass
@@ -223,11 +225,10 @@ int main() {
   srand(time(NULL));
 
   // Begin log files
-  ofstream carLogInitial;
+  ofstream carLogInitial, flagPersonLogInitial;
   carLogInitial.open("car.log");
   carLogInitial << left << setw(12) << "carID" << "direction" << "arrival-time" << "start-time" << "end-time\n";
   carLogInitial.close();
-  ofStream flagPersonLogInitial;
   flagPersonLogInitial.open("flagperson.log");
   flagPersonLogInitial << left << setw (12) << "time" << "state\n";
   flagPersonLogInitial.close();
