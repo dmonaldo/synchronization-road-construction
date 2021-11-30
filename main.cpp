@@ -2,16 +2,24 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
+#include<cstring>
 #include <queue>
 #include <semaphore.h>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-
+#include<sched.h>
 using namespace std;
 
 // Global variables to track time and be shared/usable within threads
 sem_t carSem;
+
+pthread_attr_t tat1,tat2,tat3;
+int ret;
+int prio1=70;
+int prio2=6;
+int prio3=1;
+sched_param p1,p2,p3;
 
 // Initialize mutex variables
 pthread_mutex_t flagPersonMutex;
@@ -21,7 +29,9 @@ pthread_cond_t flagPersonCondition;
 int carCounter = 0;
 
 // Direction that incoming cars are arriving from
-string currentDirection = "north";
+char currentDirection[6];
+
+
 
 struct car {
   int id;
@@ -69,7 +79,10 @@ void *produceNorth(void *args) {
     pthread_mutex_lock(&flagPersonMutex);
 
     while ((rand() % 10) < 8) {
-      cout << "in north locks" << endl;
+
+      if((rand() % 10) < 5 && (nReadyQ.size()<5))
+      {
+      cout << "Producing car in the north, LOCKS" << endl;
       carCounter++;
       newCar.id = carCounter;
       newCar.direction = 'N';
@@ -77,20 +90,49 @@ void *produceNorth(void *args) {
       arrival.tv_nsec = 0;
       newCar.arrivalTime = arrival;
       nReadyQ.push(newCar);
+
+     int k =nReadyQ.size();
+
+     cout<<k<<endl;
+
       pthread_sleep(1);
     }
+  
+  else
+  {
+    cout << "Producing car in the south direction, MUTEX LOCKS" << endl;
+      carCounter++;
+      newCar.id = carCounter;
+      newCar.direction = 'S';
+      arrival.tv_sec = (unsigned int)time(NULL);
+      arrival.tv_nsec = 0;
+      newCar.arrivalTime = arrival;
+      sReadyQ.push(newCar);
+        int s=sReadyQ.size();
 
-    cout << "north sleep 20" << endl;
+        cout<<s<<endl;
+      pthread_sleep(1);
+  }
+}
+    cout << "sleep 20 N" << endl;
     pthread_sleep(20);
     pthread_cond_signal(&flagPersonCondition);
     pthread_mutex_unlock(&flagPersonMutex);
+    cout<<"UNLOCKS"<<endl;
+
     sem_post(&carSem);
   }
+
+
   return 0;
 }
 
+/*
+
 // Car producer thread in the South direction
 void *produceSouth(void *args) {
+
+
   cout << "in south " << endl;
   struct timespec arrival;
   struct car newCar;
@@ -100,7 +142,7 @@ void *produceSouth(void *args) {
     pthread_mutex_lock(&flagPersonMutex);
 
     while ((rand() % 10) < 8) {
-      cout << "in south locks" << endl;
+      cout << "Producing car in the south direction, MUTEX LOCKS" << endl;
       carCounter++;
       newCar.id = carCounter;
       newCar.direction = 'S';
@@ -111,37 +153,55 @@ void *produceSouth(void *args) {
       pthread_sleep(1);
     }
 
-    cout << "south sleep 20" << endl;
-    pthread_sleep(20);
+    cout << "sleep 20 S" << endl;
+    pthread_sleep(5);
     pthread_cond_signal(&flagPersonCondition);
     pthread_mutex_unlock(&flagPersonMutex);
+    cout<<"MUTEX UNLOCKS"<<endl;
     sem_post(&carSem);
+
+
   }
   return 0;
 }
+*/
 
 // Changes the direction of traffic that the flag person is allowing to pass
 // through the construction zone
 void switchDirection() {
-  if (currentDirection == "north") {
-    currentDirection == "south";
+  if (strcmp(currentDirection,"north")==0) {
+    strcpy(currentDirection,"south");
+    cout<<"Switching direction to south"<<endl;
+    cout<<currentDirection<<endl;
   } else {
-    currentDirection == "north";
+
+    strcpy(currentDirection,"north");
+        cout<<"Switching direction to north"<<endl;
+        cout<<currentDirection<<endl;
+
   }
   return;
 }
+
+
 
 // Removes a car from the queue
 // Simulates a car passing through the construction zone
 void processCar() {
   struct car processedCar;
+
   ofstream carLog;
 
-  if (currentDirection == "north") {
+  if (strcmp(currentDirection,"north")==0) {
     processedCar = nReadyQ.front();
+    cout<<"processing car";
     pthread_sleep(1);
     nReadyQ.pop();
-  } else {
+
+
+  } else
+
+  {
     processedCar = sReadyQ.front();
     pthread_sleep(1);
     sReadyQ.pop();
@@ -180,32 +240,54 @@ void workerSleep() {
 // Car consumer thread
 void *consume(void *args) {
   while (1) {
-    pthread_mutex_lock(&flagPersonMutex);
+
+    cout<<"hi, entered consume"<<endl;
+    pthread_mutex_lock(&flagPersonMutex); //0 if he is awake.. consume
 
     cout << "consumer not waiting: " << currentDirection << endl;
 
-    if (currentDirection == "north") {
-      if ((sReadyQ.size() >= 10) && (nReadyQ.size() < 10)) {
+    if (strcmp(currentDirection,"north")==0) {
+
+      cout<<"direction is north"<<endl;
+      if ((sReadyQ.size() >= 5) && (nReadyQ.size() < 5)) {
+
+        cout<<"ready queue has more than 5 cars in the south";
         switchDirection();
-      } else if (nReadyQ.empty() && sReadyQ.size() >= 10) {
+      } else if (nReadyQ.empty() && sReadyQ.size() >= 5) {
+                cout<<"here 1"<<endl;
         switchDirection();
       } else if (nReadyQ.empty()) {
+                cout<<"here 2"<<endl;
+
         workerSleep();
-      } else {
+      }
+       else {
+
+        cout<<"here 3"<<endl;
         processCar();
       }
     }
     else {
-      if (nReadyQ.size() >= 10 && sReadyQ.size() < 10) {
+
+      cout<<"direction is south "<<endl;
+      if (nReadyQ.size() >= 5 && sReadyQ.size() < 5) {
+
+        cout<<"ready queue has more than 5 cars in the north";
         switchDirection();
-      } else if (sReadyQ.empty() && nReadyQ.size() >= 10) {
+      } else if (sReadyQ.empty() && nReadyQ.size() >= 5) {
+
+        cout<<"i am here"<<endl;
         switchDirection();
       } else if (sReadyQ.empty()) {
+        cout<<"hello"<<endl;
         workerSleep();
       } else {
+
+        cout<<"processing south car"<<endl;
         processCar();
       }
     }
+
 
     pthread_mutex_unlock(&flagPersonMutex);
   }
@@ -219,6 +301,8 @@ void *consume(void *args) {
 * for every one from main.
 *****************************************************************************/
 int main() {
+
+  strcpy(currentDirection,"north");
   pthread_t sTid, nTid, fTid;
   int pshared = 1;
   int semValue = 1; //value is 1 because this is a lock
@@ -251,17 +335,30 @@ int main() {
     return -1;
   }
 
-  // Create thread for car producer in the North direction
-  if (-1 == pthread_create(&nTid, NULL, produceNorth, NULL))
-    return -1;
+ret=pthread_attr_init(&tat1);
+ret=pthread_attr_getschedparam(&tat1,&p1);
+p1.sched_priority=prio1;
 
-  // Create thread for car producer in the South direction
-  if (-1 == pthread_create(&sTid, NULL, produceSouth, NULL))
-    return -1;
+ret=pthread_attr_init(&tat2);
+ret=pthread_attr_getschedparam(&tat1,&p2);
+p2.sched_priority=prio2;
+
+ret=pthread_attr_init(&tat3);
+ret=pthread_attr_getschedparam(&tat1,&p3);
+p3.sched_priority=prio3;
+
 
   // Create thread for flag person consuming the cars
-  if (-1 == pthread_create(&fTid, NULL, consume, NULL))
-    return -1;
+pthread_create(&fTid, &tat1, consume, NULL);
+
+  // Create thread for car producer in the South direction
+//pthread_create(&sTid, &tat2, produceSouth, NULL);
+
+
+  // Create thread for car producer in the North direction
+pthread_create(&nTid, &tat3, produceNorth, NULL);
+
+
 
   while (1) {
     fflush(stdout);
